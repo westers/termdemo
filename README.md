@@ -5,8 +5,18 @@ A love letter to the demoscene, running entirely in your terminal. 63 real-time 
 ## Quick Start
 
 ```bash
-cargo run --release          # autoplay: sit back and watch
-cargo run --release -- -i    # interactive: browse effects manually
+# Build
+cargo build --release
+
+# Run in autoplay mode (sit back and watch)
+./target/release/termdemo
+
+# Run in interactive mode (browse effects manually)
+./target/release/termdemo --interactive
+
+# Or via cargo (-- separates cargo args from program args)
+cargo run --release
+cargo run --release -- --interactive
 ```
 
 ## Controls
@@ -148,13 +158,6 @@ pub trait Effect {
 ```
 
 The pixel buffer is a flat array of RGB tuples rendered to the terminal using Unicode half-block characters (`\u{2580}`), giving each character cell two vertical pixels. Effects are sequenced with crossfade transitions.
-
-## Building
-
-```bash
-cargo build --release    # optimized build (recommended for smooth playback)
-cargo run --release      # build and run
-```
 
 ## License
 
