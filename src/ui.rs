@@ -22,16 +22,18 @@ impl<'a> Widget for HudWidget<'a> {
         };
 
         let paused = if seq.paused { " [PAUSED]" } else { "" };
+        let held = if seq.held { " [HELD]" } else { "" };
 
         // Status bar at bottom
         let bar_y = area.y + area.height - 1;
         let status = format!(
-            " Scene {}/{}: {} | Mode: {}{} | t={:.1}s ",
+            " Scene {}/{}: {} | Mode: {}{}{} | t={:.1}s ",
             seq.current + 1,
             seq.scene_count(),
             seq.current_scene_name(),
             mode_str,
             paused,
+            held,
             seq.scene_time,
         );
 
@@ -58,7 +60,7 @@ impl<'a> Widget for HudWidget<'a> {
         }
 
         // Controls hint on the right side
-        let hint = "q:quit Space:pause Tab:mode h:hud n/p:scene";
+        let hint = "q:quit Space:pause f:hold Tab:mode h:hud [/]:param n/p:scene";
         let hint_start = (area.x + area.width).saturating_sub(hint.len() as u16 + 1);
         let hint_style = Style::default()
             .fg(Color::Rgb(140, 140, 180))
@@ -83,7 +85,7 @@ impl<'a> Widget for HudWidget<'a> {
 
                     // Panel header
                     if panel_y > area.y {
-                        let header = " Parameters (Up/Down to adjust) ";
+                        let header = " Parameters ([/] select, Up/Down adjust) ";
                         let header_style = Style::default()
                             .fg(Color::Yellow)
                             .bg(Color::Rgb(20, 20, 40))

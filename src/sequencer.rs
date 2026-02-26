@@ -8,6 +8,7 @@ pub struct Sequencer {
     pub scene_time: f64,
     pub global_time: f64,
     pub paused: bool,
+    pub held: bool,
     pub looping: bool,
     transitioning: bool,
     transition_elapsed: f64,
@@ -25,6 +26,7 @@ impl Sequencer {
             scene_time: 0.0,
             global_time: 0.0,
             paused: false,
+            held: false,
             looping,
             transitioning: false,
             transition_elapsed: 0.0,
@@ -72,10 +74,15 @@ impl Sequencer {
         self.paused = !self.paused;
     }
 
+    pub fn toggle_hold(&mut self) {
+        self.held = !self.held;
+    }
+
     pub fn goto_scene(&mut self, index: usize) {
         if index >= self.scenes.len() || index == self.current {
             return;
         }
+        self.held = false;
         self.start_transition(index);
     }
 
@@ -83,6 +90,7 @@ impl Sequencer {
         if self.scenes.is_empty() {
             return;
         }
+        self.held = false;
         let next = if self.current + 1 >= self.scenes.len() {
             if self.looping {
                 0
@@ -99,6 +107,7 @@ impl Sequencer {
         if self.scenes.is_empty() {
             return;
         }
+        self.held = false;
         let prev = if self.current == 0 {
             if self.looping {
                 self.scenes.len() - 1
@@ -171,10 +180,12 @@ impl Sequencer {
             self.prev_frame.resize(pixels.len(), (0, 0, 0));
             self.prev_frame.copy_from_slice(pixels);
 
-            // Check if scene duration expired
-            if let Some(dur) = self.scenes[current].duration {
-                if self.scene_time >= dur {
-                    self.next_scene();
+            // Check if scene duration expired (skip when held)
+            if !self.held {
+                if let Some(dur) = self.scenes[current].duration {
+                    if self.scene_time >= dur {
+                        self.next_scene();
+                    }
                 }
             }
         }

@@ -61,12 +61,33 @@ impl App {
                     }
                 };
             }
-            Action::NextScene => self.sequencer.next_scene(),
-            Action::PrevScene => self.sequencer.prev_scene(),
-            Action::GotoScene(idx) => self.sequencer.goto_scene(idx),
+            Action::NextScene => {
+                self.sequencer.next_scene();
+                self.selected_param = 0;
+            }
+            Action::PrevScene => {
+                self.sequencer.prev_scene();
+                self.selected_param = 0;
+            }
+            Action::GotoScene(idx) => {
+                self.sequencer.goto_scene(idx);
+                self.selected_param = 0;
+            }
             Action::ToggleHud => self.show_hud = !self.show_hud,
+            Action::ToggleHold => self.sequencer.toggle_hold(),
             Action::ParamUp => self.adjust_param(0.05),
             Action::ParamDown => self.adjust_param(-0.05),
+            Action::ParamPrev => {
+                self.selected_param = self.selected_param.saturating_sub(1);
+            }
+            Action::ParamNext => {
+                if let Some(effect) = self.sequencer.current_effect_mut() {
+                    let count = effect.params().len();
+                    if count > 0 {
+                        self.selected_param = (self.selected_param + 1).min(count - 1);
+                    }
+                }
+            }
             Action::None => {}
         }
         Ok(())
