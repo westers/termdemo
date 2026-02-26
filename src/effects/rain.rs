@@ -174,7 +174,9 @@ impl Effect for Rain {
                 let total_travel = hf + streak_len + 20.0;
                 let raw_y = (phase_offset * total_travel + t * fall_speed) % total_travel;
                 let head_y = raw_y - 10.0; // start above screen
-                let head_x = start_x + wind_angle * head_y + self.wind * t * 15.0;
+                let raw_x = start_x + wind_angle * head_y + self.wind * t * 15.0;
+                let wrap_w = wf + 40.0;
+                let head_x = ((raw_x + 20.0) % wrap_w + wrap_w) % wrap_w - 20.0;
 
                 // Draw streak as a line from (head_x, head_y) upward/back
                 let dx_per_step = -wind_angle;
@@ -186,7 +188,7 @@ impl Effect for Rain {
                     let sf = s as f64;
                     let px = (head_x + dx_per_step * sf) as i32;
                     let py = (head_y + dy_per_step * sf) as i32;
-                    if px >= 0 && px < w as i32 && py >= 0 && py < h as i32 {
+                    if px >= 0 && px < w as i32 && py >= 0 && py < ground_y as i32 {
                         let fade = 1.0 - sf / streak_len;
                         let idx = py as usize * w + px as usize;
                         let (pr, pg, pb) = pixels[idx];
