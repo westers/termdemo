@@ -236,7 +236,7 @@ impl FluidSim {
 
         // Light decay
         for d in self.density.iter_mut() {
-            *d *= 0.995;
+            *d *= 0.99;
         }
     }
 
@@ -346,7 +346,7 @@ impl Effect for FluidSim {
                         let idx = yy * gw + xx;
                         self.u_prev[idx] += fx;
                         self.v_prev[idx] += fy;
-                        self.dens_prev[idx] += 50.0;
+                        self.dens_prev[idx] += 30.0;
                     }
                 }
             }
@@ -356,6 +356,9 @@ impl Effect for FluidSim {
         self.dens_step(sim_dt);
 
         // Render with bilinear interpolation from coarse grid to pixels
+        let grid_area = (gw * gh) as f64;
+        let color_scale = (0.15 * (grid_area / 2500.0).sqrt()).clamp(0.03, 0.15);
+
         for y in 0..h {
             let gy_f = y as f64 / h as f64 * (gh - 1) as f64;
             let gy0 = (gy_f.floor() as usize).min(gh - 2);
@@ -375,7 +378,7 @@ impl Effect for FluidSim {
                         + fx * self.density[gy1 * gw + gx1]);
 
                 let idx = (y * w + x) as usize;
-                pixels[idx] = Self::heat_color(d * 0.15);
+                pixels[idx] = Self::heat_color(d * color_scale);
             }
         }
     }

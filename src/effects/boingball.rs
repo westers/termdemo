@@ -68,13 +68,11 @@ impl Effect for BoingBall {
         let bounce_raw = (t * PI / v_period).sin().abs();
         let bounce = bounce_raw * self.bounce_height;
         let max_rise = hf * 0.45;
-        let floor_y = horizon_y as f64 - ball_radius;
-        let ball_y = floor_y - bounce * max_rise;
 
         // Rotation
         let rot_angle = t * spd * 2.5;
 
-        // Squash on impact
+        // Squash on impact (must be computed before floor_y so ry is available)
         let squash_factor = if bounce_raw < 0.1 {
             let s = bounce_raw / 0.1;
             0.85 + 0.15 * s
@@ -84,6 +82,9 @@ impl Effect for BoingBall {
         let stretch_x = 1.0 / squash_factor.sqrt();
         let rx = ball_radius * stretch_x;
         let ry = ball_radius * squash_factor;
+
+        let floor_y = horizon_y as f64 - ry;
+        let ball_y = floor_y - bounce * max_rise;
 
         // --- 1. Background grid ---
         for y in 0..h {
