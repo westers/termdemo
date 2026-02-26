@@ -1,6 +1,8 @@
 use crate::effect::Effect;
 use crate::scene::Scene;
 use crate::transition::apply_transition;
+use rand::rngs::StdRng;
+use rand::SeedableRng;
 
 pub struct Sequencer {
     pub scenes: Vec<Scene>,
@@ -16,10 +18,11 @@ pub struct Sequencer {
     next_frame: Vec<(u8, u8, u8)>,
     width: u32,
     height: u32,
+    rng: StdRng,
 }
 
 impl Sequencer {
-    pub fn new(scenes: Vec<Scene>, looping: bool) -> Self {
+    pub fn new(scenes: Vec<Scene>, looping: bool, seed: u64) -> Self {
         Self {
             scenes,
             current: 0,
@@ -34,6 +37,7 @@ impl Sequencer {
             next_frame: Vec::new(),
             width: 0,
             height: 0,
+            rng: StdRng::seed_from_u64(seed),
         }
     }
 
@@ -45,6 +49,7 @@ impl Sequencer {
         self.next_frame.resize(len, (0, 0, 0));
         if let Some(scene) = self.scenes.get_mut(self.current) {
             scene.effect.init(width, height);
+            scene.effect.randomize_init(&mut self.rng);
         }
     }
 
@@ -56,6 +61,7 @@ impl Sequencer {
         self.next_frame.resize(len, (0, 0, 0));
         if let Some(scene) = self.scenes.get_mut(self.current) {
             scene.effect.init(width, height);
+            scene.effect.randomize_init(&mut self.rng);
         }
     }
 
@@ -129,6 +135,7 @@ impl Sequencer {
         // init next scene
         let next_scene = &mut self.scenes[next_index];
         next_scene.effect.init(self.width, self.height);
+        next_scene.effect.randomize_init(&mut self.rng);
         self.current = next_index;
         self.scene_time = 0.0;
     }

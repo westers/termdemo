@@ -1,4 +1,5 @@
 use crate::effect::{Effect, ParamDesc};
+use rand::rngs::StdRng;
 use rand::Rng;
 use std::f64::consts::TAU;
 
@@ -42,9 +43,10 @@ impl Effect for Galaxy {
         self.width = width;
         self.height = height;
         self.stars.clear();
+    }
 
-        let mut rng = rand::thread_rng();
-
+    fn randomize_init(&mut self, rng: &mut StdRng) {
+        self.stars.clear();
         for i in 0..NUM_STARS {
             let r = rng.gen_range(0.01f64..1.0).powf(0.7);
 

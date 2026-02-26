@@ -1,4 +1,5 @@
 use crate::effect::{Effect, ParamDesc};
+use rand::rngs::StdRng;
 use rand::Rng;
 
 struct Blob {
@@ -37,8 +38,10 @@ impl Effect for Metaballs {
     fn init(&mut self, width: u32, height: u32) {
         self.width = width;
         self.height = height;
+        self.blobs.clear();
+    }
 
-        let mut rng = rand::thread_rng();
+    fn randomize_init(&mut self, rng: &mut StdRng) {
         self.blobs.clear();
         for _ in 0..5 {
             self.blobs.push(Blob {

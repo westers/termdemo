@@ -1,5 +1,6 @@
 use crate::effect::{Effect, ParamDesc};
-use rand::Rng;
+use rand::rngs::StdRng;
+use rand::{Rng, SeedableRng};
 use std::f64::consts::TAU;
 
 struct Spark {
@@ -27,6 +28,7 @@ pub struct Fireworks {
     sparks: Vec<Spark>,
     rockets: Vec<Rocket>,
     launch_accum: f64,
+    rng: StdRng,
 }
 
 impl Fireworks {
@@ -39,6 +41,7 @@ impl Fireworks {
             sparks: Vec::new(),
             rockets: Vec::new(),
             launch_accum: 0.0,
+            rng: StdRng::seed_from_u64(0),
         }
     }
 }
@@ -58,6 +61,10 @@ impl Effect for Fireworks {
         self.launch_accum = 0.0;
     }
 
+    fn randomize_init(&mut self, rng: &mut StdRng) {
+        self.rng = StdRng::seed_from_u64(rng.gen());
+    }
+
     fn update(&mut self, _t: f64, dt: f64, pixels: &mut [(u8, u8, u8)]) {
         let w = self.width;
         let h = self.height;
@@ -67,7 +74,6 @@ impl Effect for Fireworks {
 
         let wf = w as f64;
         let hf = h as f64;
-        let mut rng = rand::thread_rng();
         let grav = self.gravity * 120.0;
 
         // Fade existing pixels (night sky with trails)
@@ -82,11 +88,11 @@ impl Effect for Fireworks {
         while self.launch_accum >= 1.0 && self.rockets.len() < 8 {
             self.launch_accum -= 1.0;
             self.rockets.push(Rocket {
-                x: rng.gen_range(wf * 0.15..wf * 0.85),
+                x: self.rng.gen_range(wf * 0.15..wf * 0.85),
                 y: hf - 1.0,
-                vy: rng.gen_range(-280.0..-180.0),
-                target_y: rng.gen_range(hf * 0.15..hf * 0.45),
-                hue: rng.gen_range(0.0..1.0),
+                vy: self.rng.gen_range(-280.0..-180.0),
+                target_y: self.rng.gen_range(hf * 0.15..hf * 0.45),
+                hue: self.rng.gen_range(0.0..1.0),
             });
         }
 
@@ -130,22 +136,22 @@ impl Effect for Fireworks {
 
         // Create explosion sparks
         for (ex, ey, hue) in new_explosions {
-            let num_sparks = rng.gen_range(60..120);
+            let num_sparks = self.rng.gen_range(60..120);
             let remaining = MAX_SPARKS.saturating_sub(self.sparks.len());
             let to_create = num_sparks.min(remaining);
 
             for _ in 0..to_create {
-                let angle = rng.gen_range(0.0..TAU);
-                let speed = rng.gen_range(30.0..180.0);
+                let angle = self.rng.gen_range(0.0..TAU);
+                let speed = self.rng.gen_range(30.0..180.0);
                 // Slight hue variation per spark
-                let spark_hue = (hue + rng.gen_range(-0.08..0.08) + 1.0) % 1.0;
+                let spark_hue = (hue + self.rng.gen_range(-0.08..0.08) + 1.0) % 1.0;
 
                 self.sparks.push(Spark {
                     x: ex,
                     y: ey,
                     vx: angle.cos() * speed,
                     vy: angle.sin() * speed,
-                    life: rng.gen_range(0.6..1.0),
+                    life: self.rng.gen_range(0.6..1.0),
                     hue: spark_hue,
                 });
             }

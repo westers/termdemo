@@ -1,5 +1,6 @@
 use crate::effect::{Effect, ParamDesc};
-use rand::Rng;
+use rand::rngs::StdRng;
+use rand::{Rng, SeedableRng};
 
 struct Particle {
     x: f64,
@@ -16,6 +17,7 @@ pub struct Fountain {
     emission: f64,
     particles: Vec<Particle>,
     emit_accum: f64,
+    rng: StdRng,
 }
 
 impl Fountain {
@@ -27,6 +29,7 @@ impl Fountain {
             emission: 80.0,
             particles: Vec::new(),
             emit_accum: 0.0,
+            rng: StdRng::seed_from_u64(0),
         }
     }
 }
@@ -45,6 +48,10 @@ impl Effect for Fountain {
         self.emit_accum = 0.0;
     }
 
+    fn randomize_init(&mut self, rng: &mut StdRng) {
+        self.rng = StdRng::seed_from_u64(rng.gen());
+    }
+
     fn update(&mut self, _t: f64, dt: f64, pixels: &mut [(u8, u8, u8)]) {
         let w = self.width;
         let h = self.height;
@@ -54,7 +61,6 @@ impl Effect for Fountain {
 
         let wf = w as f64;
         let hf = h as f64;
-        let mut rng = rand::thread_rng();
 
         // Fade existing pixels for trails
         for p in pixels.iter_mut() {
@@ -67,10 +73,10 @@ impl Effect for Fountain {
         self.emit_accum += dt * self.emission;
         while self.emit_accum >= 1.0 && self.particles.len() < MAX_PARTICLES {
             self.emit_accum -= 1.0;
-            let angle = rng.gen_range(-0.4..0.4);
-            let speed = rng.gen_range(150.0..300.0);
+            let angle = self.rng.gen_range(-0.4..0.4);
+            let speed = self.rng.gen_range(150.0..300.0);
             self.particles.push(Particle {
-                x: wf * 0.5 + rng.gen_range(-3.0..3.0),
+                x: wf * 0.5 + self.rng.gen_range(-3.0..3.0),
                 y: hf - 1.0,
                 vx: angle * speed,
                 vy: -speed,

@@ -1,4 +1,6 @@
 use crate::effect::{Effect, ParamDesc};
+use rand::rngs::StdRng;
+use rand::{Rng, SeedableRng};
 
 /// Cell states for Brian's Brain automaton
 #[derive(Clone, Copy, PartialEq)]
@@ -16,6 +18,7 @@ pub struct CellularAutomata {
     grid: Vec<CellState>,
     next_grid: Vec<CellState>,
     tick_accum: f64,
+    rng: StdRng,
 }
 
 impl CellularAutomata {
@@ -28,18 +31,15 @@ impl CellularAutomata {
             grid: Vec::new(),
             next_grid: Vec::new(),
             tick_accum: 0.0,
+            rng: StdRng::seed_from_u64(0),
         }
     }
 
     fn seed(&mut self) {
-        // Deterministic seed derived from dimensions
         let size = (self.width * self.height) as usize;
-        let mut rng_state: u64 = self.width as u64 * 7919 + self.height as u64 * 6271;
         self.grid = (0..size)
             .map(|_| {
-                rng_state = rng_state.wrapping_mul(6364136223846793005).wrapping_add(1442695040888963407);
-                let val = ((rng_state >> 33) as f64) / (u32::MAX as f64);
-                if val < self.density {
+                if self.rng.gen::<f64>() < self.density {
                     CellState::On
                 } else {
                     CellState::Off
@@ -99,6 +99,10 @@ impl Effect for CellularAutomata {
         self.width = width;
         self.height = height;
         self.tick_accum = 0.0;
+    }
+
+    fn randomize_init(&mut self, rng: &mut StdRng) {
+        self.rng = StdRng::seed_from_u64(rng.gen());
         self.seed();
     }
 

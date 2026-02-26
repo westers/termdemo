@@ -1,4 +1,6 @@
 use crate::effect::{Effect, ParamDesc};
+use rand::rngs::StdRng;
+use rand::Rng;
 
 pub struct ReactionDiffusion {
     width: u32,
@@ -25,28 +27,18 @@ impl ReactionDiffusion {
         }
     }
 
-    /// Simple deterministic hash for seed placement.
-    fn hash(seed: u32) -> u32 {
-        let mut h = seed;
-        h = h.wrapping_mul(747796405).wrapping_add(2891336453);
-        h = ((h >> ((h >> 28).wrapping_add(4))) ^ h).wrapping_mul(277803737);
-        h ^ (h >> 22)
-    }
-
-    fn init_grids(&mut self) {
+    fn init_grids(&mut self, rng: &mut StdRng) {
         let n = self.grid_w * self.grid_h;
         self.u_grid = vec![1.0; n];
         self.v_grid = vec![0.0; n];
 
         // Place seed spots of V
-        let gw = self.grid_w as u32;
-        let gh = self.grid_h as u32;
+        let gw = self.grid_w;
+        let gh = self.grid_h;
         let num_seeds = 8 + (gw * gh / 2000).min(20);
-        for i in 0..num_seeds {
-            let hx = Self::hash(i * 3 + 7);
-            let hy = Self::hash(i * 3 + 13);
-            let cx = (hx % gw) as usize;
-            let cy = (hy % gh) as usize;
+        for _ in 0..num_seeds {
+            let cx = rng.gen_range(0..gw);
+            let cy = rng.gen_range(0..gh);
             let radius = 3_usize;
             for dy in 0..=(radius * 2) {
                 for dx in 0..=(radius * 2) {
@@ -137,10 +129,15 @@ impl Effect for ReactionDiffusion {
     fn init(&mut self, width: u32, height: u32) {
         self.width = width;
         self.height = height;
-        // Use a grid matching pixel resolution (or slightly reduced for speed)
         self.grid_w = (width / 2).max(2) as usize;
         self.grid_h = (height / 2).max(2) as usize;
-        self.init_grids();
+        let n = self.grid_w * self.grid_h;
+        self.u_grid = vec![1.0; n];
+        self.v_grid = vec![0.0; n];
+    }
+
+    fn randomize_init(&mut self, rng: &mut StdRng) {
+        self.init_grids(rng);
     }
 
     fn update(&mut self, _t: f64, _dt: f64, pixels: &mut [(u8, u8, u8)]) {

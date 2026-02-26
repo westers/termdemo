@@ -1,5 +1,6 @@
 use crate::effect::{Effect, ParamDesc};
 use rand::Rng;
+use rand::rngs::StdRng;
 
 const MAX_BOIDS: usize = 300;
 
@@ -39,20 +40,25 @@ impl Effect for Boids {
     fn init(&mut self, width: u32, height: u32) {
         self.width = width;
         self.height = height;
-
-        let mut rng = rand::thread_rng();
-        let wf = width as f64;
-        let hf = height as f64;
-
         self.boids.clear();
-        for i in 0..MAX_BOIDS {
-            self.boids.push(Boid {
-                x: rng.gen_range(0.0..wf),
-                y: rng.gen_range(0.0..hf),
-                vx: rng.gen_range(-50.0..50.0),
-                vy: rng.gen_range(-50.0..50.0),
-                hue: i as f64 / MAX_BOIDS as f64,
-            });
+        self.boids.resize_with(MAX_BOIDS, || Boid {
+            x: 0.0,
+            y: 0.0,
+            vx: 0.0,
+            vy: 0.0,
+            hue: 0.0,
+        });
+    }
+
+    fn randomize_init(&mut self, rng: &mut StdRng) {
+        let wf = self.width as f64;
+        let hf = self.height as f64;
+        for (i, boid) in self.boids.iter_mut().enumerate() {
+            boid.x = rng.gen_range(0.0..wf);
+            boid.y = rng.gen_range(0.0..hf);
+            boid.vx = rng.gen_range(-50.0..50.0);
+            boid.vy = rng.gen_range(-50.0..50.0);
+            boid.hue = i as f64 / MAX_BOIDS as f64;
         }
     }
 

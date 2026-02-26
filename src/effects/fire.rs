@@ -1,5 +1,6 @@
 use crate::effect::{Effect, ParamDesc};
-use rand::Rng;
+use rand::rngs::StdRng;
+use rand::{Rng, SeedableRng};
 
 pub struct Fire {
     width: u32,
@@ -8,6 +9,7 @@ pub struct Fire {
     palette: [(u8, u8, u8); 256],
     cooling: f64,
     intensity: f64,
+    rng: StdRng,
 }
 
 impl Fire {
@@ -19,6 +21,7 @@ impl Fire {
             palette: Self::build_palette(),
             cooling: 0.4,
             intensity: 1.0,
+            rng: StdRng::seed_from_u64(0),
         }
     }
 
@@ -64,6 +67,10 @@ impl Effect for Fire {
         self.heat = vec![0.0; (width * height) as usize];
     }
 
+    fn randomize_init(&mut self, rng: &mut StdRng) {
+        self.rng = StdRng::seed_from_u64(rng.gen());
+    }
+
     fn update(&mut self, _t: f64, _dt: f64, pixels: &mut [(u8, u8, u8)]) {
         let w = self.width as usize;
         let h = self.height as usize;
@@ -71,12 +78,10 @@ impl Effect for Fire {
             return;
         }
 
-        let mut rng = rand::thread_rng();
-
         // Seed bottom 2 rows with random heat
         for y in (h - 2)..h {
             for x in 0..w {
-                self.heat[y * w + x] = rng.gen_range(0.0..1.0) * self.intensity;
+                self.heat[y * w + x] = self.rng.gen_range(0.0..1.0) * self.intensity;
             }
         }
 

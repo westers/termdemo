@@ -1,4 +1,6 @@
 use crate::effect::{Effect, ParamDesc};
+use rand::rngs::StdRng;
+use rand::Rng;
 
 const NUM_PARTICLES: usize = 3000;
 
@@ -67,15 +69,16 @@ impl Effect for FlowField {
         self.height = height;
         let size = (width * height) as usize;
         self.trail = vec![(0.0, 0.0, 0.0); size];
-
-        // Deterministic seed from dimensions
-        let mut seed: u64 = (width as u64) * 7919 + (height as u64) * 6271;
         self.particles.clear();
+    }
+
+    fn randomize_init(&mut self, rng: &mut StdRng) {
+        self.particles.clear();
+        let wf = self.width as f64;
+        let hf = self.height as f64;
         for _ in 0..NUM_PARTICLES {
-            seed = seed.wrapping_mul(6364136223846793005).wrapping_add(1442695040888963407);
-            let px = (seed >> 33) as f64 / (1u64 << 31) as f64 * width as f64;
-            seed = seed.wrapping_mul(6364136223846793005).wrapping_add(1442695040888963407);
-            let py = (seed >> 33) as f64 / (1u64 << 31) as f64 * height as f64;
+            let px = rng.gen_range(0.0..wf);
+            let py = rng.gen_range(0.0..hf);
             self.particles.push((px, py));
         }
     }

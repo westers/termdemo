@@ -1,5 +1,6 @@
 use crate::effect::{Effect, ParamDesc};
-use rand::Rng;
+use rand::rngs::StdRng;
+use rand::{Rng, SeedableRng};
 
 pub struct GameOfLife {
     width: u32,
@@ -10,6 +11,7 @@ pub struct GameOfLife {
     next_cells: Vec<bool>,
     age: Vec<u16>,
     tick_accum: f64,
+    rng: StdRng,
 }
 
 impl GameOfLife {
@@ -23,14 +25,14 @@ impl GameOfLife {
             next_cells: Vec::new(),
             age: Vec::new(),
             tick_accum: 0.0,
+            rng: StdRng::seed_from_u64(0),
         }
     }
 
     fn seed(&mut self) {
-        let mut rng = rand::thread_rng();
         let size = (self.width * self.height) as usize;
         self.cells = (0..size)
-            .map(|_| rng.gen::<f64>() < self.seed_density)
+            .map(|_| self.rng.gen::<f64>() < self.seed_density)
             .collect();
         self.next_cells = vec![false; size];
         self.age = vec![0; size];
@@ -46,6 +48,10 @@ impl Effect for GameOfLife {
         self.width = width;
         self.height = height;
         self.tick_accum = 0.0;
+    }
+
+    fn randomize_init(&mut self, rng: &mut StdRng) {
+        self.rng = StdRng::seed_from_u64(rng.gen());
         self.seed();
     }
 

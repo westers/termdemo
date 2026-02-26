@@ -1,4 +1,6 @@
 use crate::effect::{Effect, ParamDesc};
+use rand::rngs::StdRng;
+use rand::Rng;
 use std::f64::consts::PI;
 
 pub struct FluidSim {
@@ -279,6 +281,36 @@ impl Effect for FluidSim {
         self.v_prev = vec![0.0; n];
         self.density = vec![0.0; n];
         self.dens_prev = vec![0.0; n];
+    }
+
+    fn randomize_init(&mut self, rng: &mut StdRng) {
+        let gw = self.gw;
+        let gh = self.gh;
+        if gw < 3 || gh < 3 {
+            return;
+        }
+        // Scatter a few random density blobs and small velocity perturbations
+        let num_blobs = rng.gen_range(3..7);
+        for _ in 0..num_blobs {
+            let cx = rng.gen_range(2..gw - 2);
+            let cy = rng.gen_range(2..gh - 2);
+            let radius = rng.gen_range(1..4);
+            let strength = rng.gen_range(20.0..80.0);
+            let vx = rng.gen_range(-5.0..5.0);
+            let vy = rng.gen_range(-5.0..5.0);
+            for dy in 0..=(radius * 2) {
+                for dx in 0..=(radius * 2) {
+                    let x = cx + dx - radius;
+                    let y = cy + dy - radius;
+                    if x > 0 && x < gw - 1 && y > 0 && y < gh - 1 {
+                        let idx = y * gw + x;
+                        self.density[idx] += strength;
+                        self.u_vel[idx] += vx;
+                        self.v_vel[idx] += vy;
+                    }
+                }
+            }
+        }
     }
 
     fn update(&mut self, t: f64, _dt: f64, pixels: &mut [(u8, u8, u8)]) {

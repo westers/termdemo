@@ -1,5 +1,6 @@
 use crate::effect::{Effect, ParamDesc};
-use rand::Rng;
+use rand::rngs::StdRng;
+use rand::{Rng, SeedableRng};
 
 pub struct Water {
     width: u32,
@@ -9,6 +10,7 @@ pub struct Water {
     buf_current: Vec<f64>,
     buf_previous: Vec<f64>,
     drop_accum: f64,
+    rng: StdRng,
 }
 
 impl Water {
@@ -21,6 +23,7 @@ impl Water {
             buf_current: Vec::new(),
             buf_previous: Vec::new(),
             drop_accum: 0.0,
+            rng: StdRng::seed_from_u64(0),
         }
     }
 }
@@ -39,6 +42,10 @@ impl Effect for Water {
         self.drop_accum = 0.0;
     }
 
+    fn randomize_init(&mut self, rng: &mut StdRng) {
+        self.rng = StdRng::seed_from_u64(rng.gen());
+    }
+
     fn update(&mut self, _t: f64, dt: f64, pixels: &mut [(u8, u8, u8)]) {
         let w = self.width as usize;
         let h = self.height as usize;
@@ -46,15 +53,13 @@ impl Effect for Water {
             return;
         }
 
-        let mut rng = rand::thread_rng();
-
         // Random raindrops
         self.drop_accum += dt * self.drop_freq;
         while self.drop_accum >= 1.0 {
             self.drop_accum -= 1.0;
-            let dx = rng.gen_range(2..w - 2);
-            let dy = rng.gen_range(2..h - 2);
-            let strength = rng.gen_range(200.0..500.0);
+            let dx = self.rng.gen_range(2..w - 2);
+            let dy = self.rng.gen_range(2..h - 2);
+            let strength = self.rng.gen_range(200.0..500.0);
             self.buf_current[dy * w + dx] = strength;
         }
 

@@ -1,10 +1,13 @@
 use crate::effect::{Effect, ParamDesc};
+use rand::rngs::StdRng;
+use rand::Rng;
 
 pub struct Lightning {
     width: u32,
     height: u32,
     frequency: f64,
     branch_count: f64,
+    seed_offset: u32,
 }
 
 /// A segment of a lightning bolt.
@@ -20,6 +23,7 @@ impl Lightning {
             height: 0,
             frequency: 1.0,
             branch_count: 3.0,
+            seed_offset: 0,
         }
     }
 
@@ -148,6 +152,10 @@ impl Effect for Lightning {
         self.height = height;
     }
 
+    fn randomize_init(&mut self, rng: &mut StdRng) {
+        self.seed_offset = rng.gen();
+    }
+
     fn update(&mut self, t: f64, _dt: f64, pixels: &mut [(u8, u8, u8)]) {
         let w = self.width;
         let h = self.height;
@@ -212,7 +220,7 @@ impl Effect for Lightning {
 
         // Generate and draw lightning bolt if visible
         if flash_alpha > 0.01 {
-            let strike_seed = Self::hash(strike_index.wrapping_mul(7919));
+            let strike_seed = Self::hash(strike_index.wrapping_mul(7919).wrapping_add(self.seed_offset));
 
             // Main bolt: top-center to random bottom point
             let start_x = wf * 0.5 + Self::hash_f(strike_seed) * wf * 0.15;

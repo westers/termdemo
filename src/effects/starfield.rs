@@ -1,5 +1,6 @@
 use crate::effect::{Effect, ParamDesc};
-use rand::Rng;
+use rand::rngs::StdRng;
+use rand::{Rng, SeedableRng};
 
 const NUM_STARS: usize = 400;
 
@@ -16,6 +17,7 @@ pub struct Starfield {
     height: u32,
     stars: Vec<Star>,
     speed: f64,
+    rng: StdRng,
 }
 
 impl Starfield {
@@ -25,6 +27,7 @@ impl Starfield {
             height: 0,
             stars: Vec::new(),
             speed: 1.0,
+            rng: StdRng::seed_from_u64(0),
         }
     }
 
@@ -47,10 +50,14 @@ impl Effect for Starfield {
     fn init(&mut self, width: u32, height: u32) {
         self.width = width;
         self.height = height;
-        let mut rng = rand::thread_rng();
+        self.stars.clear();
+    }
+
+    fn randomize_init(&mut self, rng: &mut StdRng) {
+        self.rng = StdRng::seed_from_u64(rng.gen());
         self.stars.clear();
         for _ in 0..NUM_STARS {
-            self.stars.push(Self::spawn_star(&mut rng));
+            self.stars.push(Self::spawn_star(&mut self.rng));
         }
     }
 
@@ -70,13 +77,12 @@ impl Effect for Starfield {
 
         let cx = w as f64 / 2.0;
         let cy = h as f64 / 2.0;
-        let mut rng = rand::thread_rng();
 
         for star in &mut self.stars {
             star.z -= dt * self.speed * 0.5;
 
             if star.z <= 0.01 {
-                *star = Self::spawn_star(&mut rng);
+                *star = Self::spawn_star(&mut self.rng);
                 star.z = 1.0;
                 let sx = star.x / star.z * cx + cx;
                 let sy = star.y / star.z * cy + cy;

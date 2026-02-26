@@ -1,6 +1,7 @@
 use crate::effect::{Effect, ParamDesc};
 use font8x8::UnicodeFonts;
-use rand::Rng;
+use rand::rngs::StdRng;
+use rand::{Rng, SeedableRng};
 
 struct Column {
     head_y: f64,
@@ -15,6 +16,7 @@ pub struct Matrix {
     speed: f64,
     density: f64,
     columns: Vec<Column>,
+    rng: StdRng,
 }
 
 impl Matrix {
@@ -25,23 +27,23 @@ impl Matrix {
             speed: 1.0,
             density: 0.6,
             columns: Vec::new(),
+            rng: StdRng::seed_from_u64(0),
         }
     }
 
     fn init_columns(&mut self) {
-        let mut rng = rand::thread_rng();
         let num_cols = (self.width / 8).max(1);
         self.columns.clear();
 
         for _ in 0..num_cols {
-            let trail_len = rng.gen_range(8..25);
+            let trail_len = self.rng.gen_range(8..25);
             self.columns.push(Column {
-                head_y: rng.gen_range(-(self.height as f64)..0.0),
-                speed: rng.gen_range(40.0..120.0),
+                head_y: self.rng.gen_range(-(self.height as f64)..0.0),
+                speed: self.rng.gen_range(40.0..120.0),
                 trail: (0..trail_len)
-                    .map(|_| rng.gen_range(33..127))
+                    .map(|_| self.rng.gen_range(33..127))
                     .collect(),
-                active: rng.gen::<f64>() < self.density,
+                active: self.rng.gen::<f64>() < self.density,
             });
         }
     }
@@ -55,6 +57,11 @@ impl Effect for Matrix {
     fn init(&mut self, width: u32, height: u32) {
         self.width = width;
         self.height = height;
+        self.columns.clear();
+    }
+
+    fn randomize_init(&mut self, rng: &mut StdRng) {
+        self.rng = StdRng::seed_from_u64(rng.gen());
         self.init_columns();
     }
 
@@ -64,8 +71,6 @@ impl Effect for Matrix {
         if w == 0 || h == 0 {
             return;
         }
-
-        let mut rng = rand::thread_rng();
 
         // Clear to black
         for p in pixels.iter_mut() {
@@ -79,10 +84,10 @@ impl Effect for Matrix {
 
             if !col.active {
                 // Random activation based on density
-                if rng.gen::<f64>() < self.density * dt * 2.0 {
+                if self.rng.gen::<f64>() < self.density * dt * 2.0 {
                     col.active = true;
                     col.head_y = 0.0;
-                    col.speed = rng.gen_range(40.0..120.0);
+                    col.speed = self.rng.gen_range(40.0..120.0);
                 }
                 continue;
             }
@@ -90,9 +95,9 @@ impl Effect for Matrix {
             col.head_y += col.speed * self.speed * dt;
 
             // Occasional char mutation (2% per frame)
-            if rng.gen::<f64>() < 0.02 {
-                let idx = rng.gen_range(0..col.trail.len());
-                col.trail[idx] = rng.gen_range(33..127);
+            if self.rng.gen::<f64>() < 0.02 {
+                let idx = self.rng.gen_range(0..col.trail.len());
+                col.trail[idx] = self.rng.gen_range(33..127);
             }
 
             let pixel_x = col_idx as u32 * 8;

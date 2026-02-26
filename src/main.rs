@@ -89,7 +89,20 @@ use sequencer::Sequencer;
 use transition::TransitionKind;
 
 fn main() -> io::Result<()> {
-    let interactive = std::env::args().any(|a| a == "-i" || a == "--interactive");
+    let args: Vec<String> = std::env::args().collect();
+    let interactive = args.iter().any(|a| a == "-i" || a == "--interactive");
+
+    let seed = args
+        .iter()
+        .position(|a| a == "--seed")
+        .and_then(|i| args.get(i + 1))
+        .and_then(|s| s.parse::<u64>().ok());
+
+    let seed = seed.unwrap_or_else(|| {
+        let s: u64 = rand::random();
+        eprintln!("termdemo: seed {}", s);
+        s
+    });
 
     enable_raw_mode()?;
     let mut stdout = io::stdout();
@@ -98,7 +111,7 @@ fn main() -> io::Result<()> {
     let mut terminal = Terminal::new(backend)?;
     terminal.clear()?;
 
-    let result = run(&mut terminal, interactive);
+    let result = run(&mut terminal, interactive, seed);
 
     disable_raw_mode()?;
     execute!(terminal.backend_mut(), LeaveAlternateScreen)?;
@@ -314,7 +327,7 @@ fn build_scenes() -> Vec<Scene> {
     ]
 }
 
-fn run(terminal: &mut Terminal<CrosstermBackend<io::Stdout>>, interactive: bool) -> io::Result<()> {
+fn run(terminal: &mut Terminal<CrosstermBackend<io::Stdout>>, interactive: bool, seed: u64) -> io::Result<()> {
     let mode = if interactive {
         Mode::Interactive
     } else {
@@ -322,7 +335,7 @@ fn run(terminal: &mut Terminal<CrosstermBackend<io::Stdout>>, interactive: bool)
     };
 
     let scenes = build_scenes();
-    let seq = Sequencer::new(scenes, mode == Mode::AutoPlay);
+    let seq = Sequencer::new(scenes, mode == Mode::AutoPlay, seed);
     let mut app = App::new(seq, mode);
 
     let size = terminal.size()?;
