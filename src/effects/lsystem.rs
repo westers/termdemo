@@ -1,4 +1,6 @@
 use crate::effect::{Effect, ParamDesc};
+use rand::rngs::StdRng;
+use rand::{Rng, SeedableRng};
 use std::f64::consts::PI;
 
 pub struct LSystem {
@@ -6,6 +8,10 @@ pub struct LSystem {
     height: u32,
     wind: f64,
     generations: f64,
+    rng: StdRng,
+    angle_seed: u32,
+    length_seed: u32,
+    lean: f64,
 }
 
 struct TurtleState {
@@ -22,7 +28,20 @@ impl LSystem {
             height: 0,
             wind: 0.5,
             generations: 4.0,
+            rng: StdRng::seed_from_u64(0),
+            angle_seed: 0,
+            length_seed: 0,
+            lean: 0.0,
         }
+    }
+
+    /// Deterministic pseudo-random from seed, returns 0.0..1.0.
+    fn hash(seed: u32) -> f64 {
+        let mut h = seed;
+        h = h.wrapping_mul(747796405).wrapping_add(2891336453);
+        h = ((h >> ((h >> 28).wrapping_add(4))) ^ h).wrapping_mul(277803737);
+        h = h ^ (h >> 22);
+        (h & 0x00FFFFFF) as f64 / 0x01000000 as f64
     }
 
     /// Generate L-system string for given number of generations.
@@ -109,7 +128,7 @@ impl LSystem {
                 if px >= 0 && px < w as i32 && py >= 0 && py < h as i32 {
                     let dist = ((ox * ox + oy * oy) as f64).sqrt();
                     if dist <= radius {
-                        let alpha = (1.0 - dist / radius).clamp(0.0, 1.0) * 0.8;
+                        let alpha = (1.0 - dist / radius).clamp(0.0, 1.0) * 0.9;
                         let idx = py as usize * w + px as usize;
                         let (pr, pg, pb) = pixels[idx];
                         let r = pr as f64 * (1.0 - alpha) + color.0 as f64 * alpha;
@@ -131,6 +150,13 @@ impl Effect for LSystem {
     fn init(&mut self, width: u32, height: u32) {
         self.width = width;
         self.height = height;
+    }
+
+    fn randomize_init(&mut self, rng: &mut StdRng) {
+        self.rng = StdRng::seed_from_u64(rng.gen());
+        self.angle_seed = self.rng.gen();
+        self.length_seed = self.rng.gen();
+        self.lean = self.rng.gen_range(-0.15..0.15);
     }
 
     fn update(&mut self, t: f64, _dt: f64, pixels: &mut [(u8, u8, u8)]) {
@@ -177,14 +203,14 @@ impl Effect for LSystem {
 
         // Interpret as turtle graphics
         let base_angle = 22.5 * PI / 180.0;
-        let base_length = hf * 0.12 / (1.8_f64).powi(gens as i32);
+        let base_length = hf * 0.18 / (1.7_f64).powi(gens as i32);
         let start_x = wf * 0.5;
         let start_y = ground_line as f64;
 
         let mut state = TurtleState {
             x: start_x,
             y: start_y,
-            angle: -PI / 2.0, // pointing up
+            angle: -PI / 2.0 + self.lean,
             depth: 0,
         };
         let mut stack: Vec<TurtleState> = Vec::new();
@@ -209,17 +235,24 @@ impl Effect for LSystem {
         }
 
         // Second pass: draw
+        let mut segment_idx: u32 = 0;
         for &ch in &lstring {
             match ch {
                 b'F' => {
                     let depth_frac = state.depth as f64 / max_depth as f64;
 
+                    // Per-branch random jitter (consistent across frames, varies between scenes)
+                    let angle_jitter =
+                        (Self::hash(segment_idx ^ self.angle_seed) - 0.5) * 0.15;
+                    let length_jitter =
+                        0.85 + Self::hash(segment_idx ^ self.length_seed) * 0.3;
+
                     // Wind sway: angle offset depends on depth and time
                     let wind_offset =
                         self.wind * 0.02 * (t * 1.5 + state.depth as f64 * 0.5).sin() * depth_frac;
 
-                    let angle = state.angle + wind_offset;
-                    let length = base_length * (1.0 - depth_frac * 0.3);
+                    let angle = state.angle + wind_offset + angle_jitter;
+                    let length = base_length * (1.0 - depth_frac * 0.4) * length_jitter;
 
                     let nx = state.x + angle.cos() * length;
                     let ny = state.y + angle.sin() * length;
@@ -231,12 +264,13 @@ impl Effect for LSystem {
                     let b = (30.0 + depth_frac * 10.0).clamp(20.0, 50.0) as u8;
 
                     // Thickness: thicker at base, thinner at tips
-                    let thickness = (2.5 - depth_frac * 2.0).max(0.5);
+                    let thickness = (1.2 - depth_frac * 0.8).max(0.25);
 
                     Self::draw_line(pixels, w, h, state.x, state.y, nx, ny, (r, g, b), thickness);
 
                     state.x = nx;
                     state.y = ny;
+                    segment_idx += 1;
                 }
                 b'+' => {
                     state.angle += base_angle;
@@ -258,10 +292,10 @@ impl Effect for LSystem {
                     let depth_frac = state.depth as f64 / max_depth as f64;
                     if depth_frac > 0.6 {
                         let leaf_size = 1.0 + depth_frac * 1.5;
-                        let green_var = ((state.x * 7.3 + state.y * 3.1).sin() * 30.0) as i32;
-                        let lr = (40 + green_var).clamp(20, 80) as u8;
-                        let lg = (150 + green_var).clamp(100, 200) as u8;
-                        let lb = (40 + green_var / 2).clamp(20, 60) as u8;
+                        let green_var = ((state.x * 7.3 + state.y * 3.1).sin() * 40.0) as i32;
+                        let lr = (30 + green_var).clamp(10, 70) as u8;
+                        let lg = (180 + green_var).clamp(130, 230) as u8;
+                        let lb = (35 + green_var / 2).clamp(15, 55) as u8;
                         Self::draw_leaf(pixels, w, h, state.x, state.y, leaf_size, (lr, lg, lb));
                     }
 
