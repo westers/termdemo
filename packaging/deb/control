@@ -1,0 +1,10 @@
+Package: termdemo
+Version: VERSION_PLACEHOLDER
+Section: utils
+Priority: optional
+Architecture: amd64
+Maintainer: westers
+Description: A terminal demo engine with visual effects and transitions
+ termdemo is a terminal-based demo engine that renders visual effects
+ and transitions using Unicode block characters. It requires only a
+ terminal emulator to run.

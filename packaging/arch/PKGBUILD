@@ -1,0 +1,20 @@
+# Maintainer: westers
+pkgname=termdemo
+pkgver=VERSION_PLACEHOLDER
+pkgrel=1
+pkgdesc="A terminal demo engine with visual effects and transitions"
+arch=('x86_64')
+url="https://github.com/westers/termdemo"
+license=('MIT')
+depends=()
+source=()
+sha256sums=()
+
+# This PKGBUILD expects the pre-built binary at $srcdir/../../../target/release/termdemo
+# It is intended to be invoked by build-packages.sh, not standalone.
+
+package() {
+    cd "$srcdir"
+    install -Dm755 "../../../target/release/termdemo" "$pkgdir/usr/bin/termdemo"
+    install -Dm644 "../../../LICENSE" "$pkgdir/usr/share/licenses/$pkgname/LICENSE"
+}

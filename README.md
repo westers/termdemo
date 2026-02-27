@@ -143,6 +143,42 @@ cargo run --release -- --interactive
 | 62 | **Fireworks** | Particle-based fireworks with launch, burst, and gravity-affected trails. Combines projectile physics with radial explosion patterns and color fading. |
 | 63 | **Scroller** | Horizontal scrolling text -- the bread and butter of every demo since the 1980s. Used here to deliver greetings, the traditional demoscene sign-off. |
 
+## Building Distribution Packages
+
+A unified build script produces `.deb`, `.rpm`, Arch `.pkg.tar.zst`, and portable `.tar.gz` packages:
+
+```bash
+./packaging/build-packages.sh
+```
+
+Output lands in `dist/`. The script builds the release binary, strips it, then packages it for each format it can. Formats requiring missing tools are skipped with a message.
+
+**Per-format prerequisites:**
+
+| Format | Requires |
+|--------|----------|
+| `.deb` | `dpkg-deb` (installed on Debian/Ubuntu by default) |
+| `.pkg.tar.zst` | `makepkg` + `bsdtar` (Arch `base-devel` + `libarchive-tools`) |
+| `.rpm` | `cargo install cargo-generate-rpm` |
+| `.tar.gz` | Nothing beyond `tar` (always available) |
+
+**Install from a package:**
+
+```bash
+# Debian / Ubuntu
+sudo dpkg -i dist/termdemo_0.1.0_amd64.deb
+
+# Arch
+sudo pacman -U dist/termdemo-0.1.0-1-x86_64.pkg.tar.zst
+
+# Fedora / RHEL
+sudo rpm -i dist/termdemo-0.1.0-1.x86_64.rpm
+
+# Portable
+tar xzf dist/termdemo-0.1.0-linux-x86_64.tar.gz
+sudo cp termdemo-0.1.0-linux-x86_64/termdemo /usr/local/bin/
+```
+
 ## Architecture
 
 Each effect implements a simple trait:
