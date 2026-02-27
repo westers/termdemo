@@ -28,8 +28,10 @@ cargo run --release -- --interactive
 | `Tab` | Toggle autoplay / interactive mode |
 | `n` / `Right` | Next effect |
 | `p` / `Left` | Previous effect |
+| `f` | Hold current scene (prevent auto-advance) |
 | `h` | Toggle HUD overlay |
 | `Up` / `Down` | Adjust current effect parameter |
+| `[` / `]` | Select previous / next parameter |
 | `1`-`9` | Jump to effect 1-9 |
 
 ## Requirements
