@@ -2,6 +2,10 @@
 name = "termdemo"
 version = "0.1.0"
 edition = "2021"
+description = "A terminal demo engine with visual effects and transitions"
+license = "MIT"
+authors = ["westers"]
+repository = "https://github.com/westers/termdemo"
 
 [dependencies]
 ratatui = "0.26"
@@ -12,3 +16,9 @@ font8x8 = "0.3"
 [profile.release]
 opt-level = 3
 lto = "thin"
+
+[package.metadata.generate-rpm]
+assets = [
+    { source = "target/release/termdemo", dest = "/usr/bin/termdemo", mode = "0755" },
+    { source = "LICENSE", dest = "/usr/share/doc/termdemo/LICENSE", mode = "0644" },
+]

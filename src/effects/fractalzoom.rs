@@ -5,6 +5,8 @@ pub struct FractalZoom {
     height: u32,
     zoom_speed: f64,
     max_iter: f64,
+    center_re: f64,
+    center_im: f64,
 }
 
 impl FractalZoom {
@@ -14,6 +16,8 @@ impl FractalZoom {
             height: 0,
             zoom_speed: 0.8,
             max_iter: 100.0,
+            center_re: TARGET_RE,
+            center_im: TARGET_IM,
         }
     }
 }
@@ -21,6 +25,43 @@ impl FractalZoom {
 // Seahorse Valley target
 const TARGET_RE: f64 = -0.743643887037158;
 const TARGET_IM: f64 = 0.131825904205330;
+
+fn mandelbrot_iter(c_re: f64, c_im: f64, max_iter: u32) -> u32 {
+    let mut z_re = 0.0;
+    let mut z_im = 0.0;
+    let mut iter = 0u32;
+    while iter < max_iter {
+        let z_re2 = z_re * z_re;
+        let z_im2 = z_im * z_im;
+        if z_re2 + z_im2 > 4.0 {
+            break;
+        }
+        z_im = 2.0 * z_re * z_im + c_im;
+        z_re = z_re2 - z_im2 + c_re;
+        iter += 1;
+    }
+    iter
+}
+
+fn sample_variance(center_re: f64, center_im: f64, scale: f64, max_iter: u32) -> f64 {
+    let grid = 16;
+    let mut sum = 0.0;
+    let mut sum_sq = 0.0;
+    let n = (grid * grid) as f64;
+    for gy in 0..grid {
+        for gx in 0..grid {
+            let nx = (gx as f64 / grid as f64 - 0.5) * 2.0;
+            let ny = (gy as f64 / grid as f64 - 0.5) * 2.0;
+            let c_re = center_re + nx * scale;
+            let c_im = center_im + ny * scale;
+            let it = mandelbrot_iter(c_re, c_im, max_iter) as f64;
+            sum += it;
+            sum_sq += it * it;
+        }
+    }
+    let mean = sum / n;
+    sum_sq / n - mean * mean
+}
 
 impl Effect for FractalZoom {
     fn name(&self) -> &str {
@@ -42,12 +83,20 @@ impl Effect for FractalZoom {
         let wf = w as f64;
         let hf = h as f64;
         let aspect = wf / hf;
-        let max_iter = self.max_iter as u32;
-
         // Exponential zoom: doubles every 1/zoom_speed seconds
         // Cycle to avoid f64 precision loss (~47 doublings is the limit)
         let cycle_period = 45.0 / self.zoom_speed;
         let cycle_t = t % cycle_period;
+
+        // Scale max_iter with zoom depth so detail persists at deep zoom
+        let dynamic_max_iter = (self.max_iter + cycle_t * self.zoom_speed * 8.0) as u32;
+
+        // Reset center on cycle wrap (when cycle_t is near zero)
+        if cycle_t < 0.05 {
+            self.center_re = TARGET_RE;
+            self.center_im = TARGET_IM;
+        }
+
         let zoom = 2.0_f64.powf(cycle_t * self.zoom_speed);
         let scale = 1.5 / zoom;
 
@@ -56,14 +105,14 @@ impl Effect for FractalZoom {
                 let nx = (x as f64 / wf - 0.5) * 2.0 * aspect;
                 let ny = (y as f64 / hf - 0.5) * 2.0;
 
-                let c_re = TARGET_RE + nx * scale;
-                let c_im = TARGET_IM + ny * scale;
+                let c_re = self.center_re + nx * scale;
+                let c_im = self.center_im + ny * scale;
 
                 let mut z_re = 0.0;
                 let mut z_im = 0.0;
                 let mut iter = 0u32;
 
-                while iter < max_iter {
+                while iter < dynamic_max_iter {
                     let z_re2 = z_re * z_re;
                     let z_im2 = z_im * z_im;
                     if z_re2 + z_im2 > 256.0 {
@@ -76,7 +125,7 @@ impl Effect for FractalZoom {
 
                 let idx = (y * w + x) as usize;
 
-                if iter == max_iter {
+                if iter == dynamic_max_iter {
                     pixels[idx] = (0, 0, 0);
                 } else {
                     // Smooth iteration count for band-free coloring
@@ -93,6 +142,32 @@ impl Effect for FractalZoom {
                     pixels[idx] = palette_color(palette_t);
                 }
             }
+        }
+
+        // Steer toward interesting regions if current view is too uniform
+        let current_var = sample_variance(self.center_re, self.center_im, scale, dynamic_max_iter);
+        if current_var < 5.0 {
+            let probe_dist = scale * 0.3;
+            let directions: [(f64, f64); 4] = [
+                (probe_dist, 0.0),
+                (-probe_dist, 0.0),
+                (0.0, probe_dist),
+                (0.0, -probe_dist),
+            ];
+            let mut best_var = current_var;
+            let mut best_re = self.center_re;
+            let mut best_im = self.center_im;
+            for (dre, dim) in &directions {
+                let v = sample_variance(self.center_re + dre, self.center_im + dim, scale, dynamic_max_iter);
+                if v > best_var {
+                    best_var = v;
+                    best_re = self.center_re + dre;
+                    best_im = self.center_im + dim;
+                }
+            }
+            // Nudge center 10% toward best direction
+            self.center_re += (best_re - self.center_re) * 0.1;
+            self.center_im += (best_im - self.center_im) * 0.1;
         }
     }
 

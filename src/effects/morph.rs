@@ -1,7 +1,7 @@
 use crate::effect::{Effect, ParamDesc};
 use std::f64::consts::PI;
 
-const NUM_POINTS: usize = 500;
+const NUM_POINTS: usize = 1014;
 const NUM_SHAPES: usize = 3;
 const TRANSITION_TIME: f64 = 3.0;
 const HOLD_TIME: f64 = 2.0;
@@ -44,9 +44,13 @@ impl Morph {
 
 /// Fibonacci sphere distribution for even point placement
 fn generate_sphere(count: usize) -> Vec<[f64; 3]> {
+    // Match cube grid size: side²×6
+    let per_face = count / 6;
+    let side = (per_face as f64).sqrt().ceil() as usize;
+    let actual_count = side * side * 6;
     let golden_ratio = (1.0 + 5.0_f64.sqrt()) / 2.0;
-    let n = count as f64;
-    (0..count)
+    let n = actual_count as f64;
+    (0..actual_count)
         .map(|i| {
             let theta = 2.0 * PI * i as f64 / golden_ratio;
             let phi = (1.0 - 2.0 * (i as f64 + 0.5) / n).acos();
@@ -59,55 +63,47 @@ fn generate_sphere(count: usize) -> Vec<[f64; 3]> {
         .collect()
 }
 
-/// Points distributed on cube faces
+/// Points distributed on cube faces using a proper grid
 fn generate_cube(count: usize) -> Vec<[f64; 3]> {
     let per_face = count / 6;
-    let mut points = Vec::with_capacity(count);
     let side = (per_face as f64).sqrt().ceil() as usize;
+    let mut points = Vec::with_capacity(side * side * 6);
 
     for face in 0..6 {
-        for i in 0..per_face {
-            if points.len() >= count {
-                break;
+        for row in 0..side {
+            for col in 0..side {
+                let u = if side > 1 { col as f64 / (side - 1) as f64 * 2.0 - 1.0 } else { 0.0 };
+                let v = if side > 1 { row as f64 / (side - 1) as f64 * 2.0 - 1.0 } else { 0.0 };
+                let p = match face {
+                    0 => [u, v, 1.0],
+                    1 => [u, v, -1.0],
+                    2 => [1.0, u, v],
+                    3 => [-1.0, u, v],
+                    4 => [u, 1.0, v],
+                    _ => [u, -1.0, v],
+                };
+                points.push(p);
             }
-            let row = i / side;
-            let col = i % side;
-            let u = (col as f64 / side as f64) * 2.0 - 1.0;
-            let v = (row as f64 / side as f64) * 2.0 - 1.0;
-            let p = match face {
-                0 => [u, v, 1.0],
-                1 => [u, v, -1.0],
-                2 => [1.0, u, v],
-                3 => [-1.0, u, v],
-                4 => [u, 1.0, v],
-                _ => [u, -1.0, v],
-            };
-            points.push(p);
         }
-    }
-    // Fill remaining with last face
-    while points.len() < count {
-        let i = points.len();
-        let row = i / side;
-        let col = i % side;
-        let u = (col as f64 / side as f64) * 2.0 - 1.0;
-        let v = (row as f64 / side as f64) * 2.0 - 1.0;
-        points.push([u, v, 1.0]);
     }
     points
 }
 
 /// Points distributed on a torus surface
 fn generate_torus(count: usize) -> Vec<[f64; 3]> {
+    // Match cube grid size: side²×6
+    let per_face = count / 6;
+    let side = (per_face as f64).sqrt().ceil() as usize;
+    let actual_count = side * side * 6;
     let r_major = 0.7; // distance from center of torus to center of tube
     let r_minor = 0.35; // radius of the tube
 
-    (0..count)
+    (0..actual_count)
         .map(|i| {
             // Use golden angle distribution for even spacing on torus
             let golden_ratio = (1.0 + 5.0_f64.sqrt()) / 2.0;
             let theta = 2.0 * PI * i as f64 / golden_ratio; // around the tube
-            let phi = 2.0 * PI * i as f64 / count as f64 * golden_ratio; // around the ring
+            let phi = 2.0 * PI * i as f64 / actual_count as f64 * golden_ratio; // around the ring
 
             let x = (r_major + r_minor * theta.cos()) * phi.cos();
             let y = r_minor * theta.sin();
@@ -193,7 +189,8 @@ impl Effect for Morph {
         let shape_b = &self.shapes[next_shape];
         let point_radius = self.point_size;
 
-        for i in 0..NUM_POINTS {
+        let point_count = shape_a.len().min(shape_b.len());
+        for i in 0..point_count {
             let a = shape_a[i];
             let b = shape_b[i];
 

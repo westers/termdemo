@@ -57,9 +57,9 @@ impl Effect for Spirograph {
 
         // Fade existing canvas (darken by ~1% per frame)
         for c in self.canvas.iter_mut() {
-            c.0 *= 0.99;
-            c.1 *= 0.99;
-            c.2 *= 0.99;
+            c.0 *= 0.965;
+            c.1 *= 0.965;
+            c.2 *= 0.965;
         }
 
         // Number of curves depends on complexity
@@ -82,7 +82,7 @@ impl Effect for Spirograph {
 
         // Advance angle and plot new points
         let angle_step = 0.005;
-        let points_per_frame = (300.0 * self.speed) as usize;
+        let points_per_frame = (200.0 * self.speed) as usize;
 
         for _ in 0..points_per_frame {
             self.angle += angle_step;
@@ -117,7 +117,7 @@ impl Effect for Spirograph {
                         let sy = iy + dy;
                         if sx >= 0 && sx < w as i32 && sy >= 0 && sy < h as i32 {
                             let dist = ((dx * dx + dy * dy) as f64).sqrt();
-                            let intensity = (1.0 - dist / 2.0).max(0.0) * 0.15;
+                            let intensity = (1.0 - dist / 2.0).max(0.0) * 0.05;
                             let idx = (sy as u32 * w + sx as u32) as usize;
                             self.canvas[idx].0 = (self.canvas[idx].0 + cr * intensity).min(1.0);
                             self.canvas[idx].1 = (self.canvas[idx].1 + cg * intensity).min(1.0);

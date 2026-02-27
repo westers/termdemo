@@ -173,7 +173,7 @@ impl Effect for PendulumWave {
             let dim_color = Self::hsv_to_rgb(hue, 0.6, 0.4);
 
             // Each pendulum has n_i+51 oscillations in base_period
-            let oscillations = (51 + i) as f64;
+            let oscillations = (15 + i) as f64;
             let period = base_period / oscillations;
             let omega = 2.0 * PI / period;
 
@@ -183,7 +183,7 @@ impl Effect for PendulumWave {
 
             // Draw motion trail (a few ghost positions)
             for ghost in 1..=4 {
-                let gt = t - ghost as f64 * 0.03;
+                let gt = t - ghost as f64 * 0.05;
                 let angle = max_angle * (omega * gt).sin();
                 let bob_x = px + angle.sin() * length;
                 let bob_y = pivot_y + angle.cos() * length;

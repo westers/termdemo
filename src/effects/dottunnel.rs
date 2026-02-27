@@ -93,7 +93,12 @@ impl Effect for DotTunnel {
             // Z position of this ring: starts far away, moves toward viewer
             let base_z = ring as f64 * RING_SPACING - cycle_offset;
             // Wrap around so rings recycle
-            let z = ((base_z % cycle_len) + cycle_len) % cycle_len + 0.5;
+            let z = ((base_z % cycle_len) + cycle_len) % cycle_len - 0.5;
+
+            // Skip dots that are behind the camera
+            if z < -CAMERA_Z * 0.8 {
+                continue;
+            }
 
             // Twist angle increases as ring approaches
             let twist_angle = (z * 0.3 * self.twist) + t_speed * 0.2;
@@ -124,12 +129,12 @@ impl Effect for DotTunnel {
 
         for dot in &dots {
             // Brightness fades with distance
-            let depth_factor = 1.0 - (dot.z / max_z).clamp(0.0, 1.0);
+            let depth_factor = (1.0 - (dot.z / max_z).clamp(-0.2, 1.0)).powf(0.7);
             let brightness = depth_factor * depth_factor;
 
             // Dot radius: closer = larger
             let persp = CAMERA_Z / (CAMERA_Z + dot.z);
-            let radius = (persp * 2.5).clamp(0.5, 3.5);
+            let radius = (persp * 3.5).max(0.5);
 
             // Color: each ring has a different hue, cycling with time
             let hue = (dot.ring_idx as f64 / NUM_RINGS as f64 + t_speed * 0.05) % 1.0;
