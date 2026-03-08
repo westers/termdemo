@@ -64,7 +64,6 @@ use effects::kaleidoscope::Kaleidoscope;
 use effects::julia::Julia;
 use effects::lens::Lens;
 use effects::lissajous::Lissajous3D;
-use effects::mandelbrot::Mandelbrot;
 use effects::matrix::Matrix;
 use effects::metaballs::Metaballs;
 use effects::moire::Moire;
@@ -222,9 +221,6 @@ fn build_scenes() -> Vec<Scene> {
             .with_duration(14.0)
             .with_transition(TransitionKind::Dissolve, 2.0),
         // ACT 4 — Fractals
-        Scene::new(Box::new(Mandelbrot::new()))
-            .with_duration(14.0)
-            .with_transition(TransitionKind::Dissolve, 2.0),
         Scene::new(Box::new(Julia::new()))
             .with_duration(14.0)
             .with_transition(TransitionKind::Dissolve, 2.0),
@@ -317,13 +313,10 @@ fn build_scenes() -> Vec<Scene> {
             .with_duration(14.0)
             .with_transition(TransitionKind::Fade, 2.0),
         Scene::new(Box::new(Scroller::new(
-            "63 EFFECTS IN YOUR TERMINAL *** TERMDEMO *** GREETS TO ALL DEMOSCENERS!   ",
+            "62 EFFECTS IN YOUR TERMINAL *** TERMDEMO *** GREETS TO ALL DEMOSCENERS!   ",
         )))
             .with_duration(16.0)
             .with_transition(TransitionKind::WipeLeft, 2.0),
-        Scene::new(Box::new(Plasma::with_params(0.6, 2.5)))
-            .with_duration(8.0)
-            .with_transition(TransitionKind::Dissolve, 1.5),
     ]
 }
 

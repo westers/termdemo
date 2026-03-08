@@ -10,7 +10,6 @@ pub mod rasterbars;
 pub mod copperbars;
 pub mod twister;
 pub mod lens;
-pub mod mandelbrot;
 pub mod julia;
 pub mod wireframe;
 pub mod dotsphere;
