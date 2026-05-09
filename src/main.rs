@@ -81,6 +81,12 @@ use effects::voronoi::Voronoi;
 use effects::voxel::VoxelLandscape;
 use effects::water::Water;
 use effects::wireframe::Wireframe;
+use effects::phong::Phong;
+use effects::chrome::Chrome;
+use effects::attractor::Attractor;
+use effects::apollonian::Apollonian;
+use effects::wobbler::Wobbler;
+use effects::kleinbottle::KleinBottle;
 use framebuffer::HalfBlockWidget;
 use ui::HudWidget;
 use scene::Scene;
@@ -205,6 +211,15 @@ fn build_scenes() -> Vec<Scene> {
         Scene::new(Box::new(Wireframe::new()))
             .with_duration(12.0)
             .with_transition(TransitionKind::Fade, 1.5),
+        Scene::new(Box::new(Phong::new()))
+            .with_duration(14.0)
+            .with_transition(TransitionKind::Dissolve, 1.5),
+        Scene::new(Box::new(Chrome::new()))
+            .with_duration(14.0)
+            .with_transition(TransitionKind::Dissolve, 1.5),
+        Scene::new(Box::new(KleinBottle::new()))
+            .with_duration(14.0)
+            .with_transition(TransitionKind::Dissolve, 1.5),
         Scene::new(Box::new(CubeField::new()))
             .with_duration(14.0)
             .with_transition(TransitionKind::Fade, 1.5),
@@ -229,6 +244,12 @@ fn build_scenes() -> Vec<Scene> {
             .with_transition(TransitionKind::Dissolve, 2.0),
         Scene::new(Box::new(Sierpinski::new()))
             .with_duration(14.0)
+            .with_transition(TransitionKind::Dissolve, 2.0),
+        Scene::new(Box::new(Apollonian::new()))
+            .with_duration(14.0)
+            .with_transition(TransitionKind::Dissolve, 2.0),
+        Scene::new(Box::new(Attractor::new()))
+            .with_duration(16.0)
             .with_transition(TransitionKind::Dissolve, 2.0),
         // ACT 5 — Simulations
         Scene::new(Box::new(Metaballs::new()))
@@ -308,12 +329,15 @@ fn build_scenes() -> Vec<Scene> {
         Scene::new(Box::new(Matrix::new()))
             .with_duration(14.0)
             .with_transition(TransitionKind::Fade, 2.0),
+        Scene::new(Box::new(Wobbler::new()))
+            .with_duration(12.0)
+            .with_transition(TransitionKind::Dissolve, 1.5),
         // FINALE
         Scene::new(Box::new(Fireworks::new()))
             .with_duration(14.0)
             .with_transition(TransitionKind::Fade, 2.0),
         Scene::new(Box::new(Scroller::new(
-            "62 EFFECTS IN YOUR TERMINAL *** TERMDEMO *** GREETS TO ALL DEMOSCENERS!   ",
+            "68 EFFECTS IN YOUR TERMINAL *** TERMDEMO *** GREETS TO ALL DEMOSCENERS!   ",
         )))
             .with_duration(16.0)
             .with_transition(TransitionKind::WipeLeft, 2.0),
