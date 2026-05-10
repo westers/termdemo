@@ -12,7 +12,6 @@ pub trait Effect {
     fn init(&mut self, width: u32, height: u32);
     fn randomize_init(&mut self, _rng: &mut StdRng) {}
     fn update(&mut self, t: f64, dt: f64, pixels: &mut [(u8, u8, u8)]);
-    fn cleanup(&mut self) {}
     fn params(&self) -> Vec<ParamDesc> {
         vec![]
     }

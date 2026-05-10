@@ -17,14 +17,6 @@ impl Plasma {
         }
     }
 
-    pub fn with_params(speed: f64, scale: f64) -> Self {
-        Self {
-            width: 0,
-            height: 0,
-            speed,
-            scale,
-        }
-    }
 }
 
 impl Effect for Plasma {
